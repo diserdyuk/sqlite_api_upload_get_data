@@ -3,43 +3,39 @@ import sqlite3
 import requests
 
 
-def upload_to_sqlite():
-
-    con = sqlite3.connect("sessions.db") 
-    cur = con.cursor()
-    cur.execute("CREATE TABLE data (id,ip_address,date,continent,country);")
-
-    with open('sessions.csv','r') as f:
-        dr = csv.DictReader(f)
-        to_db = [(i['id'], i['ip_address'], i['date']) for i in dr]
-
-    cur.executemany("INSERT INTO data (id,ip_address,date) VALUES (?, ?, ?);", to_db)
-    
-    con.commit()
-    con.close()
+def geo_data_for_ip(ip):
+    URL = f'https://api.ipgeolocationapi.com/geolocate/{ip}'
+    r = requests.get(url = URL) 
+    data = r.json()
+    return data 
 
 
-def get_geolocation():
-    
-    with open('sessions.csv') as f:
-        reader = csv.DictReader(f)
-        for i in reader:    
-            ip = i['ip_address'].rpartition(':')[0]    # get IP
+def upload_data_to_sqlite():
+    connection = sqlite3.connect("sessions_2.db") 
+    cursor = connection.cursor()
+    cursor.execute("CREATE TABLE data (id,ip_address,date,continent,country);")
+
+    with open('sessions.csv') as file:
+        reader = csv.DictReader(file)
+        for row in reader:    
+            ip = row['ip_address'].rpartition(':')[0]    # get IP
+
+            try:
+                continent = geo_data_for_ip(ip)['continent']
+                country = geo_data_for_ip(ip)['name']
+            except:
+                continent = 'None'
+                country = 'None'
             
-            URL = f'https://api.ipgeolocationapi.com/geolocate/{ip}'
-            r = requests.get(url = URL) 
-            data = r.json() 
-
-            continent = data['continent']
-            country = data['name']
-            print(continent, country)
-
-            # write to db  
+            to_db = [(row['id'], row['ip_address'], row['date'], continent, country)]
+            cursor.executemany("INSERT INTO data (id,ip_address,date,continent,country) VALUES (?, ?, ?, ?, ?);", to_db)
+        
+        connection.commit()
+        connection.close()
 
 
 def main():
-    # upload_to_sqlite()
-    get_geolocation()
+    upload_data_to_sqlite()
 
 
 if __name__ == '__main__':
