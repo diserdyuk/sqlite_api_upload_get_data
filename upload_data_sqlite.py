@@ -10,7 +10,11 @@ def geo_data_for_ip(ip):
     return data 
 
 
-def upload_data_to_sqlite():
+def get_ip(row):
+    return row['ip_address'].rpartition(':')[0]
+
+
+def main():
     connection = sqlite3.connect("sessions_2.db") 
     cursor = connection.cursor()
     cursor.execute("CREATE TABLE data (id,ip_address,date,continent,country);")
@@ -18,25 +22,22 @@ def upload_data_to_sqlite():
     with open('sessions.csv') as file:
         reader = csv.DictReader(file)
         for row in reader:    
-            ip = row['ip_address'].rpartition(':')[0]    # get IP
+            ip = get_ip(row)
 
             try:
-                continent = geo_data_for_ip(ip)['continent']
-                country = geo_data_for_ip(ip)['name']
+                geo_data = geo_data_for_ip(ip)
+                continent = geo_data['continent']
+                country = geo_data['name']
             except:
                 continent = 'None'
                 country = 'None'
-            
-            to_db = [(row['id'], row['ip_address'], row['date'], continent, country)]
-            cursor.executemany("INSERT INTO data (id,ip_address,date,continent,country) VALUES (?, ?, ?, ?, ?);", to_db)
-        
+
+            cursor.execute("INSERT INTO data (id,ip_address,date,continent,country) VALUES (?, ?, ?, ?, ?);", (row['id'], row['ip_address'], row['date'], continent, country))
+
         connection.commit()
         connection.close()
 
 
-def main():
-    upload_data_to_sqlite()
-
-
 if __name__ == '__main__':
     main()
+    
