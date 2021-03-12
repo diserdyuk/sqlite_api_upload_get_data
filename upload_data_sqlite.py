@@ -32,7 +32,23 @@ def main():
                 continent = 'None'
                 country = 'None'
 
-            cursor.execute("INSERT INTO data (id,ip_address,date,continent,country) VALUES (?, ?, ?, ?, ?);", (row['id'], row['ip_address'], row['date'], continent, country))
+            cursor.execute("INSERT INTO data (id,ip_address,date,continent,country) \
+                VALUES (?, ?, ?, ?, ?);", (row['id'], row['ip_address'], row['date'], continent, country))
+
+        print('Общее кол-во посещений') 
+        print(cursor.execute('SELECT COUNT(id) FROM data;').fetchall())
+        
+        print('Континент - количество IP')
+        print(cursor.execute('SELECT continent,COUNT(ip_address) \
+            FROM data GROUP BY continent;').fetchall())
+
+        print('Кол-во уникальных IP за последние 2 недели')
+        print(cursor.execute("SELECT COUNT(DISTINCT ip_address) FROM data WHERE date \
+            BETWEEN '2020-02-01' AND '2020-02-15';").fetchall())
+        
+        print('Страна - количество IP в промежутке между 2020-02-01 и 2020-02-15')
+        print(cursor.execute("SELECT country,COUNT(ip_address) FROM data WHERE date \
+            BETWEEN '2020-02-01' AND '2020-02-15' GROUP BY country;").fetchall())
 
         connection.commit()
         connection.close()
@@ -40,4 +56,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
