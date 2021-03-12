@@ -1,6 +1,7 @@
 import csv
 import sqlite3
 import requests
+import simplejson.errors
 
 
 def geo_data_for_ip(ip):
@@ -26,11 +27,13 @@ def main():
 
             try:
                 geo_data = geo_data_for_ip(ip)
-                continent = geo_data['continent']
-                country = geo_data['name']
-            except:
+            except (requests.exceptions.RequestException, simplejson.errors.JSONDecodeError) as exception:
                 continent = 'None'
                 country = 'None'
+                print(exception)
+            else:
+                continent = geo_data['continent']
+                country = geo_data['name']
 
             cursor.execute("INSERT INTO data (id,ip_address,date,continent,country) \
                 VALUES (?, ?, ?, ?, ?);", (row['id'], row['ip_address'], row['date'], continent, country))
